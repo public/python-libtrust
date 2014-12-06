@@ -303,6 +303,17 @@ def make_libtrust_x509_certificate(backend, private_path, public_path):
     ret = _lib.X509_sign(x509, evp_priv_key, evp_sha256)
     assert ret > 0
 
+    bio = backend._create_mem_bio()
+    _lib.X509_print_ex(bio, x509, 0, 0)
+
+    print(backend._read_mem_bio(bio))
+    print()
+
+    bio = backend._create_mem_bio()
+    _lib.PEM_write_bio_X509(bio, x509)
+    print(backend._read_mem_bio(bio))
+
+
 backend = libtrustBackend()
 
 identity = libtrustIdentity(
