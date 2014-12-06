@@ -21,6 +21,9 @@ import re
 from cryptography.hazmat.backends.openssl.backend import (
     Backend as OpenSSLBackend
 )
+from cryptography.hazmat.backends.openssl.ec import (
+    _EllipticCurvePrivateKey, _EllipticCurvePublicKey
+)
 from cryptography.hazmat.primitives import hashes
 
 client_data = (
@@ -140,6 +143,26 @@ class libtrustBackend(OpenSSLBackend):
         assert ret == 1
         return self._read_mem_bio(bio)
 
+    def _key_to_evp_pkey(self, key):
+        evp_pkey = self._lib.EVP_PKEY_new()
+        assert evp_pkey != self._ffi.NULL
+        evp_pkey = self._ffi.gc(evp_pkey, self._lib.EVP_PKEY_free)
+
+        if (
+            isinstance(
+                key,
+                (_EllipticCurvePrivateKey, _EllipticCurvePublicKey)
+            )
+        ):
+            self._lib.EVP_PKEY_set1_EC_KEY(
+                evp_pkey,
+                key._ec_key
+            )
+        else:
+            raise TypeError()
+
+        return evp_pkey
+
 
 class libtrustIdentity(object):
     def __init__(self, backend, private_path, public_path):
@@ -210,6 +233,11 @@ def libtrust_fingerprint(public_key):
 
 
 def make_libtrust_x509_certificate(backend, private_path, public_path):
+    """
+    Load existing key material and generate a self signed libtrust x509
+    certificate.
+    """
+
     priv_data = open(private_path, "rb").read()
     pub_data = open(public_path, "rb").read()
 
@@ -219,7 +247,61 @@ def make_libtrust_x509_certificate(backend, private_path, public_path):
     priv_key = backend.load_pem_private_key(priv_data, None)
     pub_key = backend.load_pem_public_key(pub_data)
 
+    evp_priv_key = backend._key_to_evp_pkey(priv_key)
+    evp_pub_key = backend._key_to_evp_pkey(pub_key)
+
     fingerprint = libtrust_fingerprint(pub_key)
+
+    _lib = backend._lib
+    _ffi = backend._ffi
+
+    x509 = _lib.X509_new()
+    assert x509 != _ffi.NULL
+    x509 = backend._ffi.gc(x509, _lib.X509_free)
+
+    ret = _lib.X509_set_version(x509, 2)
+    assert ret == 1
+
+    ret = _lib.X509_gmtime_adj(
+        _lib.X509_get_notBefore(x509),
+        0
+    )
+    assert ret != _ffi.NULL
+
+    ret = _lib.X509_gmtime_adj(
+        _lib.X509_get_notAfter(x509),
+        60*60*24*365
+    )
+    assert ret != _ffi.NULL
+
+    ret = _lib.X509_set_pubkey(x509, evp_pub_key)
+    assert ret == 1
+
+    name = _lib.X509_get_subject_name(x509)
+    assert name != _ffi.NULL
+
+    cn_obj = _lib.OBJ_txt2obj("CN", 0)
+    assert cn_obj != _ffi.NULL
+    cn_nid = _lib.OBJ_obj2nid(cn_obj)
+    assert cn_nid != 0
+
+    ret = _lib.X509_NAME_add_entry_by_NID(
+        name,
+        cn_nid,
+        _lib.MBSTRING_UTF8,
+        fingerprint,
+        -1, -1, 0
+    )
+    assert ret == 1
+
+    ret = _lib.X509_set_issuer_name(x509, name)
+    assert ret == 1
+
+    evp_sha256 = _lib.EVP_get_digestbyname("sha256".encode("ascii"))
+    assert evp_sha256 != _ffi.NULL
+
+    ret = _lib.X509_sign(x509, evp_priv_key, evp_sha256)
+    assert ret > 0
 
 backend = libtrustBackend()
 
