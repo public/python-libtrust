@@ -96,7 +96,7 @@ class _X509Certificate(object):
         return datetime.datetime.strptime(time, "%Y%m%d%H%M%SZ")
 
 
-class libtrustBackend(OpenSSLBackend):
+class Backend(OpenSSLBackend):
     def _create_mem_bio(self):
         bio_method = self._lib.BIO_s_mem()
         assert bio_method != self._ffi.NULL
@@ -152,3 +152,6 @@ class libtrustBackend(OpenSSLBackend):
             raise TypeError()
 
         return evp_pkey
+
+
+backend = Backend()

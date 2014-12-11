@@ -18,7 +18,7 @@ import re
 
 from cryptography.hazmat.primitives import hashes
 
-from libtrust.cryptography_extras import libtrustBackend
+from libtrust.cryptography_extras import backend
 
 
 PEM_BEGIN_RX = re.compile(r"^(-----BEGIN .*-----)$")
@@ -189,8 +189,3 @@ def _pem_selfsigned_libtrust_certificate(priv_key, pub_key, backend):
     assert ret == 1
 
     return backend._read_mem_bio(bio)
-
-
-backend = libtrustBackend()
-
-
