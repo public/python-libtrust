@@ -12,7 +12,11 @@
 
 from __future__ import absolute_import, division, print_function
 
-from cryptography.hazmat.primitives.serialization import load_pem_public_key
+from cryptography.hazmat.primitives import hashes
+from cryptography.hazmat.primitives.serialization import (
+    load_pem_private_key,
+    load_pem_public_key
+)
 
 import pytest
 
@@ -34,6 +38,13 @@ def public_key(backend):
     return load_pem_public_key(data, backend)
 
 
+@pytest.fixture
+def private_key(backend):
+    pem = load_test_data("private_key.pem")
+    data, headers = libtrust.x509.split_pem_headers(pem)
+    return load_pem_private_key(data, None, backend)
+
+
 def test_split_pem_headers(backend):
     pem = load_test_data("public_key.pem")
     data, headers = libtrust.x509.split_pem_headers(pem)
@@ -53,3 +64,15 @@ def test_fingerprint(public_key):
     assert libtrust.x509.libtrust_fingerprint(public_key) == (
         b"PG2J:H3RO:U6YF:N4XN:FB52:Y55J:G6IG:CLB6:SL6Q:NFFM:OTKI:NEKT"
     )
+
+
+def test_certificate(private_key, backend):
+    public_key = private_key.public_key()
+
+    pem = libtrust.x509._pem_selfsigned_libtrust_certificate(
+        private_key, public_key, backend
+    )
+
+    cert = backend.load_pem_x509_certificate(pem)
+    # TODO: Actually test some stuff
+    assert cert

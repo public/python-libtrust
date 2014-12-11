@@ -15,6 +15,7 @@ from __future__ import absolute_import, division, print_function
 
 import datetime
 
+from cryptography.hazmat.primitives import hashes
 from cryptography.hazmat.backends.openssl.backend import (
     Backend as OpenSSLBackend
 )
