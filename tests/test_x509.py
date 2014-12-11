@@ -36,5 +36,5 @@ def public_key(backend):
 
 def test_fingerprint(public_key):
     assert libtrust.x509.libtrust_fingerprint(public_key) == (
-        "PG2J:H3RO:U6YF:N4XN:FB52:Y55J:G6IG:CLB6:SL6Q:NFFM:OTKI:NEKT"
+        b"PG2J:H3RO:U6YF:N4XN:FB52:Y55J:G6IG:CLB6:SL6Q:NFFM:OTKI:NEKT"
     )

@@ -21,9 +21,9 @@ from cryptography.hazmat.primitives import hashes
 from libtrust.cryptography_extras import backend
 
 
-PEM_BEGIN_RX = re.compile(r"^(-----BEGIN .*-----)$")
-PEM_HEADER_RX = re.compile(r"^(.*): (.*)$")
-PEM_END_RX = re.compile(r"^(-----END .*-----)$")
+PEM_BEGIN_RX = re.compile(br"^(-----BEGIN .*-----)$")
+PEM_HEADER_RX = re.compile(br"^(.*): (.*)$")
+PEM_END_RX = re.compile(br"^(-----END .*-----)$")
 
 
 def split_pem_headers(data):
@@ -55,7 +55,7 @@ def split_pem_headers(data):
             else:
                 body.append(line)
 
-    return "\n".join(body), headers
+    return b"\n".join(body), headers
 
 
 def libtrust_fingerprint(public_key):
@@ -77,7 +77,7 @@ def libtrust_fingerprint(public_key):
     chunk_size = 4
     chunks = (b32_digest[i:i + chunk_size]
               for i in range(0, len(b32_digest), chunk_size))
-    return ":".join(chunks)
+    return b":".join(chunks)
 
 
 def _make_libtrust_x509_certificate(backend, private_path, public_path):
