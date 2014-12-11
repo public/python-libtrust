@@ -2,9 +2,6 @@ language: c
 os:
     - osx
     - linux
-compiler:
-    - clang
-    - gcc
 env:
     matrix:
         - TOXENV=py26
@@ -31,24 +28,3 @@ script:
 
 after_success:
     - source ~/.venv/bin/activate && coveralls
-
-matrix:
-    exclude:
-        - os: osx
-          compiler: gcc
-        - os: osx
-          env: TOXENV=pep8
-          compiler: clang
-        - os: osx
-          env: TOXENV=py3pep8
-          compiler: clang
-
-        - os: linux
-          env: TOXENV=docs
-          compiler: clang
-        - os: linux
-          env: TOXENV=pep8
-          compiler: clang
-        - os: linux
-          env: TOXENV=py3pep8
-          compiler: clang
