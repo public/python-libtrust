@@ -297,6 +297,13 @@ def make_libtrust_x509_certificate(backend, private_path, public_path):
     ret = _lib.X509_set_issuer_name(x509, name)
     assert ret == 1
 
+    ctx = _ffi.new("X509V3_CTX*")
+    _lib.X509V3_set_ctx_nodb(ctx)
+    _lib.X509V3_set_ctx(ctx, x509, x509, _ffi.NULL, _ffi.NULL, 0)
+    ex = _lib.X509V3_EXT_conf_nid(_ffi.NULL, ctx, _lib.NID_ext_key_usage, 0)
+    _lib.X509_add_ext(x509, ex)
+    _lib.X509_EXTENSION_free(ex)
+
     evp_sha256 = _lib.EVP_get_digestbyname("sha256".encode("ascii"))
     assert evp_sha256 != _ffi.NULL
 
