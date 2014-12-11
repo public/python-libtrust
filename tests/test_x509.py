@@ -34,6 +34,21 @@ def public_key(backend):
     return load_pem_public_key(data, backend)
 
 
+def test_split_pem_headers(backend):
+    pem = load_test_data("public_key.pem")
+    data, headers = libtrust.x509.split_pem_headers(pem)
+    assert headers == [
+        (
+            b'comment',
+            b'TLS Demo Client'
+        ),
+        (
+            b'keyID',
+            b'PG2J:H3RO:U6YF:N4XN:FB52:Y55J:G6IG:CLB6:SL6Q:NFFM:OTKI:NEKT'
+        )
+    ]
+
+
 def test_fingerprint(public_key):
     assert libtrust.x509.libtrust_fingerprint(public_key) == (
         b"PG2J:H3RO:U6YF:N4XN:FB52:Y55J:G6IG:CLB6:SL6Q:NFFM:OTKI:NEKT"
