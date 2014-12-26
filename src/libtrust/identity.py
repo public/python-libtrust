@@ -13,21 +13,35 @@
 
 from __future__ import absolute_import, division, print_function
 
-from libtrust.x509 import make_libtrust_x509_certificate
+import tempfile
+
+from libtrust.cryptography_extras import backend
+from libtrust import x509
 
 
 class Identity(object):
-    def __init__(self, backend, private_path, public_path):
-        self._backend = backend
+    def __init__(self, private_path, public_path):
         self._private_path = private_path
         self._public_path = public_path
 
-        self._pem_x509_cert = make_libtrust_x509_certificate(
+        priv_data, priv_headers = x509.split_pem_headers(
+            open(private_path).read())
+        self._private_temp = tempfile.NamedTemporaryFile()
+        self._private_temp.write(priv_data)
+        self._private_temp.flush()
+
+        self._pem_x509_cert = x509._make_libtrust_x509_certificate(
             backend, private_path, public_path
         )
 
-identity = Identity(
-    backend,
-    "private_key.pem",
-    "public_key.pem"
-)
+        self._cert_temp = tempfile.NamedTemporaryFile()
+        self._cert_temp.write(self._pem_x509_cert)
+        self._cert_temp.flush()
+
+    @property
+    def cert_path(self):
+        return self._cert_temp.name
+
+    @property
+    def private_key_path(self):
+        return self._private_temp.name

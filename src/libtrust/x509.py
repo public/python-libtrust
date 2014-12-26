@@ -95,10 +95,10 @@ def _make_libtrust_x509_certificate(backend, private_path, public_path):
     priv_key = backend.load_pem_private_key(priv_data, None)
     pub_key = backend.load_pem_public_key(pub_data)
 
-    pem = _pem_selfsigned_libtrust_certificate(priv_key, pub_key, backend)
+    return _pem_selfsigned_libtrust_certificate(backend, priv_key, pub_key)
 
 
-def _pem_selfsigned_libtrust_certificate(priv_key, pub_key, backend):
+def _pem_selfsigned_libtrust_certificate(backend, priv_key, pub_key):
     _lib = backend._lib
     _ffi = backend._ffi
 
@@ -122,7 +122,7 @@ def _pem_selfsigned_libtrust_certificate(priv_key, pub_key, backend):
 
     ret = _lib.X509_gmtime_adj(
         _lib.X509_get_notBefore(x509),
-        0
+        -1
     )
     assert ret != _ffi.NULL
 
@@ -162,14 +162,13 @@ def _pem_selfsigned_libtrust_certificate(priv_key, pub_key, backend):
     assert ret == 1
 
     # Add the key usage extension
-    # TODO: Enable this after 0.7 is released
-
-    # ctx = _ffi.new("X509V3_CTX*")
-    # _lib.X509V3_set_ctx_nodb(ctx)
-    # _lib.X509V3_set_ctx(ctx, x509, x509, _ffi.NULL, _ffi.NULL, 0)
-    # ex = _lib.X509V3_EXT_conf_nid(_ffi.NULL, ctx, _lib.NID_ext_key_usage, 0)
-    # _lib.X509_add_ext(x509, ex)
-    # _lib.X509_EXTENSION_free(ex)
+    ctx = _ffi.new("X509V3_CTX*")
+    _lib.X509V3_set_ctx_nodb(ctx)
+    _lib.X509V3_set_ctx(ctx, x509, x509, _ffi.NULL, _ffi.NULL, 0)
+    ex = _lib.X509V3_EXT_conf_nid(_ffi.NULL, ctx, _lib.NID_ext_key_usage,
+                                  "clientAuth")
+    _lib.X509_add_ext(x509, ex, -1)
+    _lib.X509_EXTENSION_free(ex)
 
     # Sign the certificate
 

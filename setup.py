@@ -18,7 +18,7 @@ src_dir = os.path.join(base_dir, "src")
 sys.path.insert(0, src_dir)
 
 requirements = [
-    "cryptography"
+    "cryptography>=0.7"
 ]
 
 test_requirements = [
